@@ -9,6 +9,14 @@
   "plugins": {
     "CapacitorHttp": {
       "enabled": true
+    },
+    "AndroidBackgroundTask": {
+      "enabled": true
     }
+  },
+  "android": {
+    "allowMixedContent": true,
+    "fullScreenMode": true,
+    "windowSoftInputMode": "adjustResize"
   }
 }
