@@ -1,0 +1,14 @@
+
+{
+  "appId": "app.lovable.2d5246900a4a46bbba1884256705da29",
+  "appName": "secret-gesture-keeper",
+  "server": {
+    "url": "https://2d524690-0a4a-46bb-ba18-84256705da29.lovableproject.com?forceHideBadge=true",
+    "cleartext": true
+  },
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    }
+  }
+}
