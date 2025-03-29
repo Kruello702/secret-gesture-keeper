@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import AuthForm from '@/components/auth/AuthForm';
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,8 @@ const Index = () => {
   const [sequenceToDelete, setSequenceToDelete] = useState<string | null>(null);
   const [activeSequence, setActiveSequence] = useState<SequenceData | null>(null);
   const [isPhoneLocked, setIsPhoneLocked] = useState(false);
+  const [hiddenApps, setHiddenApps] = useState<string[]>([]);
+  const [hiddenContacts, setHiddenContacts] = useState<string[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -51,6 +54,24 @@ const Index = () => {
         console.error('Failed to parse saved sequences', e);
       }
     }
+    
+    const savedHiddenApps = localStorage.getItem('hiddenApps');
+    if (savedHiddenApps) {
+      try {
+        setHiddenApps(JSON.parse(savedHiddenApps));
+      } catch (e) {
+        console.error('Failed to parse hidden apps', e);
+      }
+    }
+    
+    const savedHiddenContacts = localStorage.getItem('hiddenContacts');
+    if (savedHiddenContacts) {
+      try {
+        setHiddenContacts(JSON.parse(savedHiddenContacts));
+      } catch (e) {
+        console.error('Failed to parse hidden contacts', e);
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -64,6 +85,18 @@ const Index = () => {
       localStorage.setItem('sequences', JSON.stringify(sequences));
     }
   }, [sequences]);
+  
+  useEffect(() => {
+    if (hiddenApps.length > 0) {
+      localStorage.setItem('hiddenApps', JSON.stringify(hiddenApps));
+    }
+  }, [hiddenApps]);
+  
+  useEffect(() => {
+    if (hiddenContacts.length > 0) {
+      localStorage.setItem('hiddenContacts', JSON.stringify(hiddenContacts));
+    }
+  }, [hiddenContacts]);
 
   const handleAuthSuccess = () => {
     setIsAuthenticated(true);
@@ -83,6 +116,10 @@ const Index = () => {
     
     if (newGesture.name.includes("Lock/Unlock")) {
       handleLockUnlockDemo();
+    } else if (newGesture.name.includes("Hide Apps")) {
+      handleHideAppsDemo();
+    } else if (newGesture.name.includes("Hide Contacts")) {
+      handleHideContactsDemo();
     }
   };
 
@@ -95,6 +132,42 @@ const Index = () => {
         ? "Your device has been unlocked with your gesture" 
         : "Your device has been locked with your gesture",
     });
+  };
+  
+  const handleHideAppsDemo = () => {
+    // Toggle visibility of apps in demo
+    if (hiddenApps.length > 0) {
+      setHiddenApps([]);
+      toast({
+        title: "Apps Revealed",
+        description: "Your hidden apps are now visible",
+      });
+    } else {
+      // Demo hiding apps
+      setHiddenApps(['facebook', 'instagram', 'whatsapp']);
+      toast({
+        title: "Apps Hidden",
+        description: "Selected apps are now hidden from your home screen",
+      });
+    }
+  };
+  
+  const handleHideContactsDemo = () => {
+    // Toggle visibility of contacts in demo
+    if (hiddenContacts.length > 0) {
+      setHiddenContacts([]);
+      toast({
+        title: "Contacts Revealed",
+        description: "Your hidden contacts are now visible",
+      });
+    } else {
+      // Demo hiding contacts
+      setHiddenContacts(['John Doe', 'Jane Smith', 'Contact 3']);
+      toast({
+        title: "Contacts Hidden",
+        description: "Selected contacts are now hidden from your contacts list",
+      });
+    }
   };
 
   const handleDeleteGesture = (id: string) => {
@@ -153,7 +226,22 @@ const Index = () => {
     });
   };
 
-  const activateSequenceDemo = () => {
+  const activateSequenceDemo = (sequenceId?: string) => {
+    let targetSequence: SequenceData;
+    
+    if (sequenceId && sequences.length > 0) {
+      const foundSequence = sequences.find(s => s.id === sequenceId);
+      if (foundSequence) {
+        setActiveSequence(foundSequence);
+        toast({
+          title: "Sequence Activated",
+          description: `${foundSequence.name} has been activated.`,
+        });
+        return;
+      }
+    }
+    
+    // Fallback to demo sequence if no sequence found
     const demoSequence: SequenceData = {
       id: 'demo-sequence',
       name: 'Demo Sequence',
@@ -175,7 +263,8 @@ const Index = () => {
           targetPosition: { x: 700, y: 400 }
         }
       ],
-      timerEnabled: false
+      timerEnabled: false,
+      createdAt: new Date().toISOString()
     };
     
     setActiveSequence(demoSequence);
@@ -188,6 +277,34 @@ const Index = () => {
 
   const handleCloseSequence = () => {
     setActiveSequence(null);
+  };
+
+  const handleGhostDeleteDemo = () => {
+    toast({
+      title: "Ghost Delete Activated",
+      description: "Conversations have been cleared from the selected apps",
+    });
+  };
+  
+  const handleEmergencySignalDemo = () => {
+    toast({
+      title: "Emergency Signal Sent",
+      description: "Your emergency contacts have been notified with your message and location",
+    });
+  };
+  
+  const handleStartAppDemo = () => {
+    toast({
+      title: "App Launched",
+      description: "Selected app has been launched",
+    });
+  };
+  
+  const handleSilentRecordingDemo = () => {
+    toast({
+      title: "Silent Recording Started",
+      description: "Audio is now being recorded in the background",
+    });
   };
 
   if (isLoading) {
@@ -223,7 +340,7 @@ const Index = () => {
               variant="outline" 
               size="sm" 
               className="text-xs flex items-center gap-1"
-              onClick={activateSequenceDemo}
+              onClick={() => activateSequenceDemo()}
             >
               <PlayCircle className="h-3 w-3" />
               Demo Sequence
@@ -251,6 +368,14 @@ const Index = () => {
         <SecurityFeatures 
           onAddGesture={handleAddGesture} 
           onAddSequence={handleAddSequence}
+          onActivateSequence={activateSequenceDemo}
+          onGhostDelete={handleGhostDeleteDemo}
+          onEmergencySignal={handleEmergencySignalDemo}
+          onStartApp={handleStartAppDemo}
+          onSilentRecording={handleSilentRecordingDemo}
+          onLockUnlock={handleLockUnlockDemo}
+          onHideApps={handleHideAppsDemo}
+          onHideContacts={handleHideContactsDemo}
         />
         
         <div className="flex justify-between items-center">
@@ -288,6 +413,7 @@ const Index = () => {
           sequences={sequences} 
           onDeleteSequence={handleDeleteSequence} 
           onEditSequence={handleEditSequence} 
+          onActivateSequence={activateSequenceDemo}
         />
       </main>
 

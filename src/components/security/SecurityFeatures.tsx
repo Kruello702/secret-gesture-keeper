@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { 
@@ -58,9 +59,28 @@ export interface SecurityFeature {
 interface SecurityFeaturesProps {
   onAddGesture: (gesture: GestureData) => void;
   onAddSequence: (sequence: SequenceData) => void;
+  onActivateSequence: (sequenceId: string) => void;
+  onGhostDelete: () => void;
+  onEmergencySignal: () => void;
+  onStartApp: () => void;
+  onSilentRecording: () => void;
+  onLockUnlock: () => void;
+  onHideApps: () => void;
+  onHideContacts: () => void;
 }
 
-const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAddSequence }) => {
+const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ 
+  onAddGesture, 
+  onAddSequence,
+  onActivateSequence,
+  onGhostDelete,
+  onEmergencySignal,
+  onStartApp,
+  onSilentRecording,
+  onLockUnlock,
+  onHideApps,
+  onHideContacts
+}) => {
   const [selectedFeature, setSelectedFeature] = useState<SecurityFeature | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
@@ -187,6 +207,26 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
       setIsSequenceDialogOpen(true);
     } else {
       setIsDialogOpen(true);
+    }
+  };
+
+  const handleFeatureDemo = (feature: SecurityFeature) => {
+    if (feature.id === 'ghost-delete') {
+      onGhostDelete();
+    } else if (feature.id === 'emergency-signal') {
+      onEmergencySignal();
+    } else if (feature.id === 'start-app') {
+      onStartApp();
+    } else if (feature.id === 'voice-recording') {
+      onSilentRecording();
+    } else if (feature.id === 'lock-unlock') {
+      onLockUnlock();
+    } else if (feature.id === 'sequence-automation' && feature.config?.sequence) {
+      onActivateSequence(feature.config.sequence.id);
+    } else if (feature.id === 'hide-apps') {
+      onHideApps();
+    } else if (feature.id === 'hide-contacts') {
+      onHideContacts();
     }
   };
 
@@ -524,6 +564,42 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
     return null;
   };
 
+  const getDemoButton = (feature: SecurityFeature) => {
+    const buttonText = feature.id === 'sequence-automation' ? 'Run Sequence' : 
+                      feature.id === 'ghost-delete' ? 'Demo Delete' :
+                      feature.id === 'emergency-signal' ? 'Demo Emergency' :
+                      feature.id === 'lock-unlock' ? 'Demo Lock/Unlock' :
+                      feature.id === 'hide-apps' ? 'Demo Hide Apps' :
+                      feature.id === 'hide-contacts' ? 'Demo Hide Contacts' :
+                      'Demo Feature';
+    
+    // Only show demo button if the feature has a configuration (or doesn't need one like lock/unlock)
+    const hasConfigured = feature.id === 'lock-unlock' || 
+                         (feature.id === 'sequence-automation' && feature.config?.sequence) ||
+                         (feature.id === 'ghost-delete' && (feature.config?.apps?.length || feature.config?.contacts?.length)) ||
+                         (feature.id === 'emergency-signal' && feature.config?.contacts?.length) ||
+                         (feature.id === 'start-app' && feature.config?.apps?.length) ||
+                         (feature.id === 'hide-apps' && feature.config?.apps?.length) ||
+                         (feature.id === 'hide-contacts' && feature.config?.contacts?.length) ||
+                         (feature.id === 'voice-recording');
+    
+    if (hasConfigured) {
+      return (
+        <Button 
+          variant="default" 
+          onClick={() => handleFeatureDemo(feature)}
+          className="w-full bg-app-purple/80 hover:bg-app-purple"
+          size="sm"
+        >
+          <PlayCircle className="mr-2 h-4 w-4" />
+          {buttonText}
+        </Button>
+      );
+    }
+    
+    return null;
+  };
+
   const renderConfigDialog = () => {
     if (!selectedFeature) return null;
 
@@ -828,6 +904,7 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
                   </Button>
                   
                   {getConfigButton(feature)}
+                  {getDemoButton(feature)}
                 </div>
               </div>
             ))}
