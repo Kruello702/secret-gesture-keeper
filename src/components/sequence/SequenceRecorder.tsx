@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +25,7 @@ export interface SequenceData {
   points: SequencePoint[];
   timerEnabled: boolean;
   timerDelay?: number; // Delay in minutes
+  createdAt?: string; // Added createdAt property
 }
 
 interface SequenceRecorderProps {
@@ -97,7 +97,8 @@ const SequenceRecorder: React.FC<SequenceRecorderProps> = ({
       name: name || 'Unnamed Sequence',
       points,
       timerEnabled,
-      timerDelay: timerEnabled ? timerDelay : undefined
+      timerDelay: timerEnabled ? timerDelay : undefined,
+      createdAt: new Date().toISOString()
     };
     onSequenceRecorded(sequence);
   };

@@ -54,9 +54,10 @@ export interface SecurityFeature {
 
 interface SecurityFeaturesProps {
   onAddGesture: (gesture: GestureData) => void;
+  onAddSequence: (sequence: SequenceData) => void; // Added onAddSequence property
 }
 
-const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture }) => {
+const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAddSequence }) => {
   const [selectedFeature, setSelectedFeature] = useState<SecurityFeature | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
@@ -257,6 +258,8 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture }) => 
         title: "Sequence created",
         description: `"${sequence.name}" with ${sequence.points.length} actions${sequence.timerEnabled ? ' and timer' : ''}`,
       });
+      
+      onAddSequence(sequence);
     }
   };
 
