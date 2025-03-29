@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import AuthForm from '@/components/auth/AuthForm';
 import { Button } from "@/components/ui/button";
-import { Shield, Settings, LogOut, PlayCircle } from "lucide-react";
+import { Shield, Settings, LogOut, PlayCircle, Lock } from "lucide-react";
 import GestureRecorder, { GestureData } from '@/components/gesture/GestureRecorder';
 import GestureList from '@/components/gesture/GestureList';
 import SecurityFeatures from '@/components/security/SecurityFeatures';
@@ -23,6 +22,7 @@ const Index = () => {
   const [gestureToDelete, setGestureToDelete] = useState<string | null>(null);
   const [sequenceToDelete, setSequenceToDelete] = useState<string | null>(null);
   const [activeSequence, setActiveSequence] = useState<SequenceData | null>(null);
+  const [isPhoneLocked, setIsPhoneLocked] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -34,7 +34,6 @@ const Index = () => {
     
     setIsLoading(false);
     
-    // Load gestures from localStorage
     const savedGestures = localStorage.getItem('gestures');
     if (savedGestures) {
       try {
@@ -44,7 +43,6 @@ const Index = () => {
       }
     }
     
-    // Load sequences from localStorage
     const savedSequences = localStorage.getItem('sequences');
     if (savedSequences) {
       try {
@@ -55,14 +53,12 @@ const Index = () => {
     }
   }, []);
 
-  // Save gestures to localStorage when they change
   useEffect(() => {
     if (gestures.length > 0) {
       localStorage.setItem('gestures', JSON.stringify(gestures));
     }
   }, [gestures]);
   
-  // Save sequences to localStorage when they change
   useEffect(() => {
     if (sequences.length > 0) {
       localStorage.setItem('sequences', JSON.stringify(sequences));
@@ -84,6 +80,22 @@ const Index = () => {
   const handleAddGesture = (newGesture: GestureData) => {
     setGestures(prev => [...prev, newGesture]);
     setIsRecording(false);
+    
+    if (newGesture.name.includes("Lock/Unlock")) {
+      handleLockUnlockDemo();
+    }
+  };
+
+  const handleLockUnlockDemo = () => {
+    setIsPhoneLocked(!isPhoneLocked);
+    
+    toast({
+      title: isPhoneLocked ? "Phone Unlocked" : "Phone Locked",
+      description: isPhoneLocked 
+        ? "Your device has been unlocked with your gesture" 
+        : "Your device has been locked with your gesture",
+      icon: <Lock className="h-5 w-5" />
+    });
   };
 
   const handleDeleteGesture = (id: string) => {
@@ -132,7 +144,6 @@ const Index = () => {
   };
 
   const handleAddSequence = (newSequence: SequenceData) => {
-    // Add created timestamp if not present
     if (!newSequence.createdAt) {
       newSequence.createdAt = new Date().toISOString();
     }
@@ -218,6 +229,15 @@ const Index = () => {
               <PlayCircle className="h-3 w-3" />
               Demo Sequence
             </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-xs flex items-center gap-1"
+              onClick={handleLockUnlockDemo}
+            >
+              <Lock className="h-3 w-3" />
+              {isPhoneLocked ? "Unlock" : "Lock"}
+            </Button>
             <Button variant="ghost" size="icon">
               <Settings className="h-5 w-5" />
             </Button>
@@ -234,7 +254,6 @@ const Index = () => {
           onAddSequence={handleAddSequence}
         />
         
-        {/* Gestures Section */}
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-semibold">Your Gestures</h2>
           <Dialog open={isRecording} onOpenChange={setIsRecording}>
@@ -265,7 +284,6 @@ const Index = () => {
           onEditGesture={handleEditGesture} 
         />
         
-        {/* Sequences Section */}
         <h2 className="text-xl font-semibold pt-4">Your Sequences</h2>
         <SequenceList 
           sequences={sequences} 
@@ -296,6 +314,21 @@ const Index = () => {
           sequence={activeSequence} 
           onClose={handleCloseSequence} 
         />
+      )}
+      
+      {isPhoneLocked && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
+          <Lock className="h-16 w-16 text-app-purple mb-4" />
+          <h2 className="text-xl font-semibold text-white mb-2">Device Locked</h2>
+          <p className="text-sm text-gray-300 mb-6">Use your gesture to unlock</p>
+          <Button 
+            variant="outline" 
+            onClick={handleLockUnlockDemo}
+            className="border-app-purple text-app-purple hover:bg-app-purple/20"
+          >
+            Simulate Unlock Gesture
+          </Button>
+        </div>
       )}
     </div>
   );

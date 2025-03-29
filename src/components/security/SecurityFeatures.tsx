@@ -19,7 +19,8 @@ import {
   Settings,
   MapPin,
   AppWindow,
-  PlayCircle // New icon for sequences
+  PlayCircle,
+  Lock
 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import GestureRecorder, { GestureData } from '../gesture/GestureRecorder';
@@ -54,7 +55,7 @@ export interface SecurityFeature {
 
 interface SecurityFeaturesProps {
   onAddGesture: (gesture: GestureData) => void;
-  onAddSequence: (sequence: SequenceData) => void; // Added onAddSequence property
+  onAddSequence: (sequence: SequenceData) => void;
 }
 
 const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAddSequence }) => {
@@ -66,10 +67,8 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
   const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
   const [emergencyMessage, setEmergencyMessage] = useState('');
   const [includeLocation, setIncludeLocation] = useState(true);
-  const { toast } = useToast();
-  
-  // Add new state for sequence recorder
   const [isSequenceDialogOpen, setIsSequenceDialogOpen] = useState(false);
+  const { toast } = useToast();
 
   const availableApps = [
     { id: 'whatsapp', name: 'WhatsApp' },
@@ -79,7 +78,6 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
     { id: 'sms', name: 'SMS' }
   ];
 
-  // Create a locally mutable copy of security features
   const [securityFeatures, setSecurityFeatures] = useState<SecurityFeature[]>([
     {
       id: 'ghost-delete',
@@ -118,6 +116,12 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
       icon: <Mic className="h-6 w-6 text-app-purple" />
     },
     {
+      id: 'lock-unlock',
+      name: 'Lock/Unlock Phone',
+      description: 'Quickly lock or unlock your device with a gesture',
+      icon: <Lock className="h-6 w-6 text-app-purple" />
+    },
+    {
       id: 'sequence-automation',
       name: 'Start a Sequence',
       description: 'Automate button presses, swipes, or taps with a floating bubble',
@@ -131,15 +135,12 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
   const handleFeatureSelect = (feature: SecurityFeature) => {
     setSelectedFeature(feature);
     
-    // If it's a feature that needs configuration, open config dialog first
     if (feature.id === 'ghost-delete') {
-      // Initialize selections with current config if it exists
       const ghostDeleteFeature = securityFeatures.find(f => f.id === 'ghost-delete');
       setSelectedApps(ghostDeleteFeature?.config?.apps || []);
       setSelectedContacts(ghostDeleteFeature?.config?.contacts || []);
       setIsConfigOpen(true);
     } else if (feature.id === 'emergency-signal') {
-      // Initialize emergency signal configurations
       const emergencyFeature = securityFeatures.find(f => f.id === 'emergency-signal');
       setSelectedContacts(emergencyFeature?.config?.contacts || []);
       setEmergencyMessage(emergencyFeature?.config?.message || "I'm in an emergency situation and need help.");
@@ -150,10 +151,8 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
       setSelectedApps(startAppFeature?.config?.apps || []);
       setIsConfigOpen(true);
     } else if (feature.id === 'sequence-automation') {
-      // Open sequence recorder dialog
       setIsSequenceDialogOpen(true);
     } else {
-      // For other features, go straight to gesture recording
       setIsDialogOpen(true);
     }
   };
@@ -231,10 +230,8 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
     }
   };
 
-  // Add handler for sequence recording
   const handleSequenceRecorded = (sequence: SequenceData) => {
     if (selectedFeature && selectedFeature.id === 'sequence-automation') {
-      // Update the feature in state with the new sequence
       const updatedFeatures = securityFeatures.map(feature => {
         if (feature.id === 'sequence-automation') {
           return {
@@ -250,7 +247,6 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
       
       setSecurityFeatures(updatedFeatures);
       
-      // Close sequence dialog and open gesture dialog
       setIsSequenceDialogOpen(false);
       setIsDialogOpen(true);
       
@@ -280,7 +276,6 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
     if (!selectedFeature) return;
     
     if (selectedFeature.id === 'ghost-delete') {
-      // Update the feature in state with the new config
       const updatedFeatures = securityFeatures.map(feature => {
         if (feature.id === 'ghost-delete') {
           return {
@@ -296,7 +291,6 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
       
       setSecurityFeatures(updatedFeatures);
       
-      // Now proceed to gesture recording
       setIsConfigOpen(false);
       setIsDialogOpen(true);
       
@@ -305,7 +299,6 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
         description: `Will delete conversations from ${selectedContacts.length} contacts across ${selectedApps.length} apps`,
       });
     } else if (selectedFeature.id === 'emergency-signal') {
-      // Update emergency signal configuration
       const updatedFeatures = securityFeatures.map(feature => {
         if (feature.id === 'emergency-signal') {
           return {
@@ -322,7 +315,6 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
       
       setSecurityFeatures(updatedFeatures);
       
-      // Now proceed to gesture recording
       setIsConfigOpen(false);
       setIsDialogOpen(true);
       
@@ -331,7 +323,6 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
         description: `Will send alert to ${selectedContacts.length} contacts${includeLocation ? ' with location' : ''}`,
       });
     } else if (selectedFeature.id === 'start-app') {
-      // Update the feature in state with the new config
       const updatedFeatures = securityFeatures.map(feature => {
         if (feature.id === 'start-app') {
           return {
@@ -346,7 +337,6 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
       
       setSecurityFeatures(updatedFeatures);
       
-      // Now proceed to gesture recording
       setIsConfigOpen(false);
       setIsDialogOpen(true);
       
@@ -400,6 +390,17 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
         >
           <Settings className="mr-2 h-4 w-4" />
           Configure Sequence
+        </Button>
+      );
+    } else if (feature.id === 'lock-unlock') {
+      return (
+        <Button 
+          variant="outline" 
+          className="w-full bg-muted/20 hover:bg-muted/30"
+          disabled={true}
+        >
+          <Settings className="mr-2 h-4 w-4" />
+          No configuration needed
         </Button>
       );
     }
@@ -645,7 +646,6 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
         </CardFooter>
       </Card>
 
-      {/* Configuration Dialog */}
       <Dialog open={isConfigOpen} onOpenChange={(open) => {
         setIsConfigOpen(open);
         if (!open) setSelectedFeature(null);
@@ -656,6 +656,7 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
               {selectedFeature?.id === 'ghost-delete' ? 'Configure Ghost Delete' : 
                selectedFeature?.id === 'emergency-signal' ? 'Configure Emergency Signal' : 
                selectedFeature?.id === 'start-app' ? 'Configure Start an App' :
+               selectedFeature?.id === 'lock-unlock' ? 'Configure Lock/Unlock Phone' :
                'Configure Feature'}
             </DialogTitle>
             <DialogDescription>
@@ -665,6 +666,8 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
                 'Configure your emergency message and contacts' : 
                selectedFeature?.id === 'start-app' ?
                 'Select which apps you want to start with a gesture' :
+               selectedFeature?.id === 'lock-unlock' ?
+                'No configuration needed' :
                 'Configure this security feature'}
             </DialogDescription>
           </DialogHeader>
@@ -681,7 +684,6 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
         </DialogContent>
       </Dialog>
 
-      {/* Gesture Recording Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={(open) => {
         setIsDialogOpen(open);
         if (!open) setSelectedFeature(null);
@@ -704,7 +706,6 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
         </DialogContent>
       </Dialog>
 
-      {/* Sequence Recorder Dialog */}
       <Dialog open={isSequenceDialogOpen} onOpenChange={(open) => {
         setIsSequenceDialogOpen(open);
         if (!open) setSelectedFeature(null);
