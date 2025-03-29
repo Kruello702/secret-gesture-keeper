@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { 
@@ -39,7 +38,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import SequenceRecorder, { SequenceData } from '../sequence/SequenceRecorder';
+import SequenceRecorder, { SequenceData } from '../sequence/SequenceRecorder";
 
 export interface SecurityFeature {
   id: string;
@@ -600,6 +599,12 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({
     return null;
   };
 
+  const handleStartSequenceForFeature = (feature: SecurityFeature) => {
+    if (feature.id === 'sequence-automation' && feature.config?.sequence) {
+      onActivateSequence(feature.config.sequence.id);
+    }
+  };
+
   const renderConfigDialog = () => {
     if (!selectedFeature) return null;
 
@@ -905,6 +910,17 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({
                   
                   {getConfigButton(feature)}
                   {getDemoButton(feature)}
+                  
+                  {feature.id === 'sequence-automation' && feature.config?.sequence && (
+                    <Button 
+                      variant="default" 
+                      onClick={() => handleStartSequenceForFeature(feature)}
+                      className="w-full bg-green-500 hover:bg-green-600"
+                    >
+                      <PlayCircle className="mr-2 h-4 w-4" />
+                      Start Sequence
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}
