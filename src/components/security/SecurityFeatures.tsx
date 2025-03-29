@@ -18,7 +18,8 @@ import {
   X,
   Settings,
   MapPin,
-  AppWindow, // New import for app start icon
+  AppWindow,
+  PlayCircle // New icon for sequences
 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import GestureRecorder, { GestureData } from '../gesture/GestureRecorder';
@@ -34,6 +35,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import SequenceRecorder, { SequenceData } from '../sequence/SequenceRecorder';
 
 export interface SecurityFeature {
   id: string;
@@ -46,6 +48,7 @@ export interface SecurityFeature {
     contacts?: string[];
     message?: string;
     includeLocation?: boolean;
+    sequence?: SequenceData;
   };
 }
 
@@ -63,6 +66,9 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture }) => 
   const [emergencyMessage, setEmergencyMessage] = useState('');
   const [includeLocation, setIncludeLocation] = useState(true);
   const { toast } = useToast();
+  
+  // Add new state for sequence recorder
+  const [isSequenceDialogOpen, setIsSequenceDialogOpen] = useState(false);
 
   const availableApps = [
     { id: 'whatsapp', name: 'WhatsApp' },
@@ -101,7 +107,7 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture }) => 
       description: 'Quickly launch a pre-selected app with a gesture',
       icon: <AppWindow className="h-6 w-6 text-app-purple" />,
       config: {
-        apps: [] // Will store selected apps to launch
+        apps: [] 
       }
     },
     {
@@ -111,10 +117,13 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture }) => 
       icon: <Mic className="h-6 w-6 text-app-purple" />
     },
     {
-      id: 'self-destruct',
-      name: 'Self-Destruct Mode',
-      description: 'Force-reboot and wipe sensitive data',
-      icon: <AlertTriangle className="h-6 w-6 text-app-purple" />
+      id: 'sequence-automation',
+      name: 'Start a Sequence',
+      description: 'Automate button presses, swipes, or taps with a floating bubble',
+      icon: <PlayCircle className="h-6 w-6 text-app-purple" />,
+      config: {
+        sequence: undefined
+      }
     }
   ]);
 
@@ -139,6 +148,9 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture }) => 
       const startAppFeature = securityFeatures.find(f => f.id === 'start-app');
       setSelectedApps(startAppFeature?.config?.apps || []);
       setIsConfigOpen(true);
+    } else if (feature.id === 'sequence-automation') {
+      // Open sequence recorder dialog
+      setIsSequenceDialogOpen(true);
     } else {
       // For other features, go straight to gesture recording
       setIsDialogOpen(true);
@@ -215,6 +227,49 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture }) => 
       setSelectedFeature(startAppFeature);
       setSelectedApps(startAppFeature.config?.apps || []);
       setIsConfigOpen(true);
+    }
+  };
+
+  // Add handler for sequence recording
+  const handleSequenceRecorded = (sequence: SequenceData) => {
+    if (selectedFeature && selectedFeature.id === 'sequence-automation') {
+      // Update the feature in state with the new sequence
+      const updatedFeatures = securityFeatures.map(feature => {
+        if (feature.id === 'sequence-automation') {
+          return {
+            ...feature,
+            config: {
+              ...feature.config,
+              sequence
+            }
+          };
+        }
+        return feature;
+      });
+      
+      setSecurityFeatures(updatedFeatures);
+      
+      // Close sequence dialog and open gesture dialog
+      setIsSequenceDialogOpen(false);
+      setIsDialogOpen(true);
+      
+      toast({
+        title: "Sequence created",
+        description: `"${sequence.name}" with ${sequence.points.length} actions${sequence.timerEnabled ? ' and timer' : ''}`,
+      });
+    }
+  };
+
+  const handleCancelSequence = () => {
+    setIsSequenceDialogOpen(false);
+    setSelectedFeature(null);
+  };
+
+  const handleConfigureSequence = () => {
+    const sequenceFeature = securityFeatures.find(f => f.id === 'sequence-automation');
+    if (sequenceFeature) {
+      setSelectedFeature(sequenceFeature);
+      setIsSequenceDialogOpen(true);
     }
   };
 
@@ -331,6 +386,17 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture }) => 
         >
           <Settings className="mr-2 h-4 w-4" />
           Select Apps to Start
+        </Button>
+      );
+    } else if (feature.id === 'sequence-automation') {
+      return (
+        <Button 
+          variant="outline" 
+          onClick={handleConfigureSequence}
+          className="w-full bg-muted/20 hover:bg-muted/30"
+        >
+          <Settings className="mr-2 h-4 w-4" />
+          Configure Sequence
         </Button>
       );
     }
@@ -541,6 +607,14 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture }) => 
                         </p>
                       </div>
                     )}
+                    {feature.id === 'sequence-automation' && feature.config && feature.config.sequence && (
+                      <div className="mt-2">
+                        <p className="text-xs text-muted-foreground">
+                          Sequence: {feature.config.sequence.name} • {feature.config.sequence.points.length} actions
+                          {feature.config.sequence.timerEnabled && ` • Timer: ${feature.config.sequence.timerDelay} min`}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
                 
@@ -611,7 +685,7 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture }) => 
       }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            {selectedFeature ? `Record Gesture for ${selectedFeature.name}` : 'Record Gesture'}
+            <DialogTitle>{selectedFeature ? `Record Gesture for ${selectedFeature.name}` : 'Record Gesture'}</DialogTitle>
             <DialogDescription>
               Draw a unique gesture pattern that will trigger this security feature
             </DialogDescription>
@@ -622,6 +696,29 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture }) => 
               onGestureRecorded={handleGestureRecorded} 
               onCancel={handleCancelRecording}
               gestureName={`${selectedFeature.name} Gesture`}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Sequence Recorder Dialog */}
+      <Dialog open={isSequenceDialogOpen} onOpenChange={(open) => {
+        setIsSequenceDialogOpen(open);
+        if (!open) setSelectedFeature(null);
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create Automation Sequence</DialogTitle>
+            <DialogDescription>
+              Record a sequence of taps, double-taps, and swipes to automate interactions
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedFeature && (
+            <SequenceRecorder 
+              onSequenceRecorded={handleSequenceRecorded} 
+              onCancel={handleCancelSequence}
+              sequenceName={selectedFeature.config?.sequence?.name || "New Sequence"}
             />
           )}
         </DialogContent>

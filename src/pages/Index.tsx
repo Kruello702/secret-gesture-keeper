@@ -1,14 +1,15 @@
-
 import React, { useState, useEffect } from 'react';
 import AuthForm from '@/components/auth/AuthForm';
 import { Button } from "@/components/ui/button";
-import { Shield, Settings, LogOut } from "lucide-react";
+import { Shield, Settings, LogOut, PlayCircle } from "lucide-react";
 import GestureRecorder, { GestureData } from '@/components/gesture/GestureRecorder';
 import GestureList from '@/components/gesture/GestureList';
 import SecurityFeatures from '@/components/security/SecurityFeatures';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import FloatingBubble from '@/components/sequence/FloatingBubble';
+import { SequenceData } from '@/components/sequence/SequenceRecorder';
 
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -17,21 +18,18 @@ const Index = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [gestureToDelete, setGestureToDelete] = useState<string | null>(null);
+  const [activeSequence, setActiveSequence] = useState<SequenceData | null>(null);
   const { toast } = useToast();
 
-  // Check authentication status on component mount
   useEffect(() => {
-    // In a real app, we would check with a backend service or secure storage
     const hasPin = localStorage.getItem('userPin') !== null;
     
-    // For demo: auto-authenticate if there's a PIN
     if (import.meta.env.DEV && hasPin) {
       setIsAuthenticated(true);
     }
     
     setIsLoading(false);
     
-    // Load gestures from localStorage
     const savedGestures = localStorage.getItem('gestures');
     if (savedGestures) {
       try {
@@ -42,7 +40,6 @@ const Index = () => {
     }
   }, []);
 
-  // Save gestures to localStorage whenever they change
   useEffect(() => {
     if (gestures.length > 0) {
       localStorage.setItem('gestures', JSON.stringify(gestures));
@@ -84,11 +81,49 @@ const Index = () => {
   };
 
   const handleEditGesture = (id: string) => {
-    // This would open a dialog to re-record the gesture
     toast({
       title: "Coming soon",
       description: "Gesture editing will be available in a future update.",
     });
+  };
+
+  const activateSequenceDemo = () => {
+    const securityFeatures = document.querySelector('security-features');
+    
+    const demoSequence: SequenceData = {
+      id: 'demo-sequence',
+      name: 'Demo Sequence',
+      points: [
+        {
+          id: 'point-1',
+          type: 'tap',
+          position: { x: 100, y: 200 }
+        },
+        {
+          id: 'point-2',
+          type: 'double-tap',
+          position: { x: 300, y: 300 }
+        },
+        {
+          id: 'point-3',
+          type: 'swipe',
+          position: { x: 500, y: 400 },
+          targetPosition: { x: 700, y: 400 }
+        }
+      ],
+      timerEnabled: false
+    };
+    
+    setActiveSequence(demoSequence);
+    
+    toast({
+      title: "Sequence Activated",
+      description: "Demo sequence has been activated.",
+    });
+  };
+
+  const handleCloseSequence = () => {
+    setActiveSequence(null);
   };
 
   if (isLoading) {
@@ -120,6 +155,15 @@ const Index = () => {
             <h1 className="text-lg font-semibold text-foreground">Secret Gesture Keeper</h1>
           </div>
           <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-xs flex items-center gap-1"
+              onClick={activateSequenceDemo}
+            >
+              <PlayCircle className="h-3 w-3" />
+              Demo Sequence
+            </Button>
             <Button variant="ghost" size="icon">
               <Settings className="h-5 w-5" />
             </Button>
@@ -180,6 +224,13 @@ const Index = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      {activeSequence && (
+        <FloatingBubble 
+          sequence={activeSequence} 
+          onClose={handleCloseSequence} 
+        />
+      )}
     </div>
   );
 };
