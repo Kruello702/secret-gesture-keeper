@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 export interface SecurityFeature {
   id: string;
@@ -64,7 +65,8 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture }) => 
     { id: 'sms', name: 'SMS' }
   ];
 
-  const securityFeatures: SecurityFeature[] = [
+  // Create a locally mutable copy of security features
+  const [securityFeatures, setSecurityFeatures] = useState<SecurityFeature[]>([
     {
       id: 'ghost-delete',
       name: 'Ghost Delete',
@@ -99,16 +101,17 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture }) => 
       description: 'Force-reboot and wipe sensitive data',
       icon: <AlertTriangle className="h-6 w-6 text-app-purple" />
     }
-  ];
+  ]);
 
   const handleFeatureSelect = (feature: SecurityFeature) => {
     setSelectedFeature(feature);
     
     // If it's the Ghost Delete feature, open config dialog first
     if (feature.id === 'ghost-delete') {
-      // Reset selections to current config, if any
-      setSelectedApps(feature.config?.apps || []);
-      setSelectedContacts(feature.config?.contacts || []);
+      // Initialize selections with current config if it exists
+      const ghostDeleteFeature = securityFeatures.find(f => f.id === 'ghost-delete');
+      setSelectedApps(ghostDeleteFeature?.config?.apps || []);
+      setSelectedContacts(ghostDeleteFeature?.config?.contacts || []);
       setIsConfigOpen(true);
     } else {
       // For other features, go straight to gesture recording
@@ -161,7 +164,7 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture }) => 
 
   const handleSaveConfig = () => {
     if (selectedFeature && selectedFeature.id === 'ghost-delete') {
-      // Update the feature with the new config
+      // Update the feature in state with the new config
       const updatedFeatures = securityFeatures.map(feature => {
         if (feature.id === 'ghost-delete') {
           return {
@@ -174,6 +177,8 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture }) => 
         }
         return feature;
       });
+      
+      setSecurityFeatures(updatedFeatures);
       
       // Now proceed to gesture recording
       setIsConfigOpen(false);
@@ -198,7 +203,7 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture }) => 
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {securityFeatures.map((feature) => (
-              <div key={feature.id} className="security-feature-card">
+              <div key={feature.id} className="security-feature-card border rounded-lg p-4">
                 <div className="flex items-start mb-4">
                   <div className="h-10 w-10 rounded-full bg-app-purple/20 flex items-center justify-center mr-3">
                     {feature.icon}
@@ -238,7 +243,10 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture }) => 
       </Card>
 
       {/* Ghost Delete Configuration Dialog */}
-      <Dialog open={isConfigOpen} onOpenChange={setIsConfigOpen}>
+      <Dialog open={isConfigOpen} onOpenChange={(open) => {
+        setIsConfigOpen(open);
+        if (!open) setSelectedFeature(null);
+      }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Configure Ghost Delete</DialogTitle>
@@ -250,7 +258,7 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture }) => 
           <div className="space-y-4 py-2">
             <div>
               <h3 className="mb-2 text-sm font-medium">Select Apps</h3>
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 {availableApps.map(app => (
                   <div key={app.id} className="flex items-center space-x-2">
                     <Checkbox 
@@ -258,18 +266,18 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture }) => 
                       checked={selectedApps.includes(app.id)}
                       onCheckedChange={() => handleToggleApp(app.id)}
                     />
-                    <label 
+                    <Label 
                       htmlFor={`app-${app.id}`}
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      className="text-sm font-medium leading-none cursor-pointer"
                     >
                       {app.name}
-                    </label>
+                    </Label>
                   </div>
                 ))}
               </div>
             </div>
             
-            <div>
+            <div className="border-t pt-4">
               <h3 className="mb-2 text-sm font-medium">Add Contacts</h3>
               <div className="flex mb-2">
                 <Input
@@ -277,8 +285,14 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture }) => 
                   onChange={(e) => setNewContactName(e.target.value)}
                   placeholder="Contact name"
                   className="mr-2"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddContact();
+                    }
+                  }}
                 />
-                <Button onClick={handleAddContact} size="sm">Add</Button>
+                <Button type="button" onClick={handleAddContact} size="sm">Add</Button>
               </div>
               
               {selectedContacts.length > 0 && (
@@ -302,14 +316,20 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture }) => 
           </div>
           
           <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => setIsConfigOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => {
+              setIsConfigOpen(false);
+              setSelectedFeature(null);
+            }}>Cancel</Button>
             <Button onClick={handleSaveConfig}>Save & Continue</Button>
           </div>
         </DialogContent>
       </Dialog>
 
       {/* Gesture Recording Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isDialogOpen} onOpenChange={(open) => {
+        setIsDialogOpen(open);
+        if (!open) setSelectedFeature(null);
+      }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
