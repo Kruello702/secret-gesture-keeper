@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { 
@@ -18,7 +17,8 @@ import {
   Plus,
   X,
   Settings,
-  MapPin
+  MapPin,
+  AppWindow, // New import for app start icon
 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import GestureRecorder, { GestureData } from '../gesture/GestureRecorder';
@@ -96,10 +96,13 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture }) => 
       }
     },
     {
-      id: 'fake-shutdown',
-      name: 'Fake Shutdown',
-      description: 'Black out screen while keeping phone running in background',
-      icon: <Monitor className="h-6 w-6 text-app-purple" />
+      id: 'start-app',
+      name: 'Start an App',
+      description: 'Quickly launch a pre-selected app with a gesture',
+      icon: <AppWindow className="h-6 w-6 text-app-purple" />,
+      config: {
+        apps: [] // Will store selected apps to launch
+      }
     },
     {
       id: 'voice-recording',
@@ -131,6 +134,10 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture }) => 
       setSelectedContacts(emergencyFeature?.config?.contacts || []);
       setEmergencyMessage(emergencyFeature?.config?.message || "I'm in an emergency situation and need help.");
       setIncludeLocation(emergencyFeature?.config?.includeLocation !== false);
+      setIsConfigOpen(true);
+    } else if (feature.id === 'start-app') {
+      const startAppFeature = securityFeatures.find(f => f.id === 'start-app');
+      setSelectedApps(startAppFeature?.config?.apps || []);
       setIsConfigOpen(true);
     } else {
       // For other features, go straight to gesture recording
@@ -202,6 +209,15 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture }) => 
     }
   };
 
+  const handleConfigureStartApp = () => {
+    const startAppFeature = securityFeatures.find(f => f.id === 'start-app');
+    if (startAppFeature) {
+      setSelectedFeature(startAppFeature);
+      setSelectedApps(startAppFeature.config?.apps || []);
+      setIsConfigOpen(true);
+    }
+  };
+
   const handleSaveConfig = () => {
     if (!selectedFeature) return;
     
@@ -256,6 +272,30 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture }) => 
         title: "Emergency Signal configured",
         description: `Will send alert to ${selectedContacts.length} contacts${includeLocation ? ' with location' : ''}`,
       });
+    } else if (selectedFeature.id === 'start-app') {
+      // Update the feature in state with the new config
+      const updatedFeatures = securityFeatures.map(feature => {
+        if (feature.id === 'start-app') {
+          return {
+            ...feature,
+            config: {
+              apps: selectedApps
+            }
+          };
+        }
+        return feature;
+      });
+      
+      setSecurityFeatures(updatedFeatures);
+      
+      // Now proceed to gesture recording
+      setIsConfigOpen(false);
+      setIsDialogOpen(true);
+      
+      toast({
+        title: "Start an App configured",
+        description: `Will launch ${selectedApps.length} app(s) with a gesture`,
+      });
     }
   };
 
@@ -280,6 +320,17 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture }) => 
         >
           <Settings className="mr-2 h-4 w-4" />
           Set Message and Contacts
+        </Button>
+      );
+    } else if (feature.id === 'start-app') {
+      return (
+        <Button 
+          variant="outline" 
+          onClick={handleConfigureStartApp}
+          className="w-full bg-muted/20 hover:bg-muted/30"
+        >
+          <Settings className="mr-2 h-4 w-4" />
+          Select Apps to Start
         </Button>
       );
     }
@@ -416,6 +467,31 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture }) => 
           </div>
         </div>
       );
+    } else if (selectedFeature.id === 'start-app') {
+      return (
+        <div className="space-y-4 py-2">
+          <div>
+            <h3 className="mb-2 text-sm font-medium">Select Apps to Start</h3>
+            <div className="grid grid-cols-2 gap-2">
+              {availableApps.map(app => (
+                <div key={app.id} className="flex items-center space-x-2">
+                  <Checkbox 
+                    id={`app-${app.id}`} 
+                    checked={selectedApps.includes(app.id)}
+                    onCheckedChange={() => handleToggleApp(app.id)}
+                  />
+                  <Label 
+                    htmlFor={`app-${app.id}`}
+                    className="text-sm font-medium leading-none cursor-pointer"
+                  >
+                    {app.name}
+                  </Label>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
     }
     
     return null;
@@ -458,6 +534,13 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture }) => 
                         </p>
                       </div>
                     )}
+                    {feature.id === 'start-app' && feature.config && (
+                      <div className="mt-2">
+                        <p className="text-xs text-muted-foreground">
+                          {feature.config.apps?.length || 0} apps selected to start
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
                 
@@ -495,6 +578,7 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture }) => 
             <DialogTitle>
               {selectedFeature?.id === 'ghost-delete' ? 'Configure Ghost Delete' : 
                selectedFeature?.id === 'emergency-signal' ? 'Configure Emergency Signal' : 
+               selectedFeature?.id === 'start-app' ? 'Configure Start an App' :
                'Configure Feature'}
             </DialogTitle>
             <DialogDescription>
@@ -502,6 +586,8 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture }) => 
                 'Select which apps and contacts you want to include in the Ghost Delete feature' : 
                selectedFeature?.id === 'emergency-signal' ? 
                 'Configure your emergency message and contacts' : 
+               selectedFeature?.id === 'start-app' ?
+                'Select which apps you want to start with a gesture' :
                 'Configure this security feature'}
             </DialogDescription>
           </DialogHeader>
@@ -525,9 +611,7 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture }) => 
       }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>
-              {selectedFeature ? `Record Gesture for ${selectedFeature.name}` : 'Record Gesture'}
-            </DialogTitle>
+            {selectedFeature ? `Record Gesture for ${selectedFeature.name}` : 'Record Gesture'}
             <DialogDescription>
               Draw a unique gesture pattern that will trigger this security feature
             </DialogDescription>
