@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import AuthForm from '@/components/auth/AuthForm';
 import { Button } from "@/components/ui/button";
@@ -10,14 +11,17 @@ import { useToast } from "@/components/ui/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import FloatingBubble from '@/components/sequence/FloatingBubble';
 import { SequenceData } from '@/components/sequence/SequenceRecorder';
+import SequenceList from '@/components/sequence/SequenceList';
 
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [gestures, setGestures] = useState<GestureData[]>([]);
+  const [sequences, setSequences] = useState<SequenceData[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [gestureToDelete, setGestureToDelete] = useState<string | null>(null);
+  const [sequenceToDelete, setSequenceToDelete] = useState<string | null>(null);
   const [activeSequence, setActiveSequence] = useState<SequenceData | null>(null);
   const { toast } = useToast();
 
@@ -30,6 +34,7 @@ const Index = () => {
     
     setIsLoading(false);
     
+    // Load gestures from localStorage
     const savedGestures = localStorage.getItem('gestures');
     if (savedGestures) {
       try {
@@ -38,13 +43,31 @@ const Index = () => {
         console.error('Failed to parse saved gestures', e);
       }
     }
+    
+    // Load sequences from localStorage
+    const savedSequences = localStorage.getItem('sequences');
+    if (savedSequences) {
+      try {
+        setSequences(JSON.parse(savedSequences));
+      } catch (e) {
+        console.error('Failed to parse saved sequences', e);
+      }
+    }
   }, []);
 
+  // Save gestures to localStorage when they change
   useEffect(() => {
     if (gestures.length > 0) {
       localStorage.setItem('gestures', JSON.stringify(gestures));
     }
   }, [gestures]);
+  
+  // Save sequences to localStorage when they change
+  useEffect(() => {
+    if (sequences.length > 0) {
+      localStorage.setItem('sequences', JSON.stringify(sequences));
+    }
+  }, [sequences]);
 
   const handleAuthSuccess = () => {
     setIsAuthenticated(true);
@@ -65,19 +88,33 @@ const Index = () => {
 
   const handleDeleteGesture = (id: string) => {
     setGestureToDelete(id);
+    setSequenceToDelete(null);
     setShowDeleteAlert(true);
   };
 
-  const confirmDeleteGesture = () => {
+  const handleDeleteSequence = (id: string) => {
+    setSequenceToDelete(id);
+    setGestureToDelete(null);
+    setShowDeleteAlert(true);
+  };
+
+  const confirmDelete = () => {
     if (gestureToDelete) {
       setGestures(prev => prev.filter(g => g.id !== gestureToDelete));
       toast({
         title: "Gesture deleted",
         description: "The gesture has been deleted successfully.",
       });
-      setShowDeleteAlert(false);
-      setGestureToDelete(null);
+    } else if (sequenceToDelete) {
+      setSequences(prev => prev.filter(s => s.id !== sequenceToDelete));
+      toast({
+        title: "Sequence deleted",
+        description: "The sequence has been deleted successfully.",
+      });
     }
+    setShowDeleteAlert(false);
+    setGestureToDelete(null);
+    setSequenceToDelete(null);
   };
 
   const handleEditGesture = (id: string) => {
@@ -87,9 +124,26 @@ const Index = () => {
     });
   };
 
+  const handleEditSequence = (id: string) => {
+    toast({
+      title: "Coming soon",
+      description: "Sequence editing will be available in a future update.",
+    });
+  };
+
+  const handleAddSequence = (newSequence: SequenceData) => {
+    // Add created timestamp if not present
+    if (!newSequence.createdAt) {
+      newSequence.createdAt = new Date().toISOString();
+    }
+    setSequences(prev => [...prev, newSequence]);
+    toast({
+      title: "Sequence created",
+      description: "New sequence has been added successfully.",
+    });
+  };
+
   const activateSequenceDemo = () => {
-    const securityFeatures = document.querySelector('security-features');
-    
     const demoSequence: SequenceData = {
       id: 'demo-sequence',
       name: 'Demo Sequence',
@@ -175,8 +229,12 @@ const Index = () => {
       </header>
 
       <main className="container mx-auto px-4 py-6 space-y-6">
-        <SecurityFeatures onAddGesture={handleAddGesture} />
+        <SecurityFeatures 
+          onAddGesture={handleAddGesture} 
+          onAddSequence={handleAddSequence}
+        />
         
+        {/* Gestures Section */}
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-semibold">Your Gestures</h2>
           <Dialog open={isRecording} onOpenChange={setIsRecording}>
@@ -206,6 +264,14 @@ const Index = () => {
           onDeleteGesture={handleDeleteGesture} 
           onEditGesture={handleEditGesture} 
         />
+        
+        {/* Sequences Section */}
+        <h2 className="text-xl font-semibold pt-4">Your Sequences</h2>
+        <SequenceList 
+          sequences={sequences} 
+          onDeleteSequence={handleDeleteSequence} 
+          onEditSequence={handleEditSequence} 
+        />
       </main>
 
       <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
@@ -213,12 +279,12 @@ const Index = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete this gesture and any associated security feature.
+              This will permanently delete this {gestureToDelete ? "gesture" : "sequence"} and any associated security feature.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteGesture} className="bg-destructive">
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive">
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
