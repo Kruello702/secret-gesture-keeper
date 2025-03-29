@@ -10,6 +10,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import FloatingBubble from '@/components/sequence/FloatingBubble';
 import { SequenceData } from '@/components/sequence/SequenceRecorder';
+import SequenceRecorder from '@/components/sequence/SequenceRecorder';
 import SequenceList from '@/components/sequence/SequenceList';
 import { Card, CardContent } from "@/components/ui/card";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
@@ -475,28 +476,51 @@ const Index = () => {
           onHideContacts={handleHideContactsDemo}
         />
         
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
           <h2 className="text-xl font-semibold">Your Gestures</h2>
-          <Dialog open={isRecording} onOpenChange={setIsRecording}>
-            <DialogTrigger asChild>
-              <Button className="bg-app-purple hover:bg-app-purple/90">
-                Record New Gesture
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Record New Gesture</DialogTitle>
-                <DialogDescription>
-                  Draw a unique gesture pattern that will be saved to your library
-                </DialogDescription>
-              </DialogHeader>
-              <GestureRecorder 
-                onGestureRecorded={handleAddGesture} 
-                onCancel={() => setIsRecording(false)}
-                gestureName="Custom Gesture" 
-              />
-            </DialogContent>
-          </Dialog>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Dialog open={isRecording} onOpenChange={setIsRecording}>
+              <DialogTrigger asChild>
+                <Button className="bg-app-purple hover:bg-app-purple/90">
+                  Record New Gesture
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Record New Gesture</DialogTitle>
+                  <DialogDescription>
+                    Draw a unique gesture pattern that will be saved to your library
+                  </DialogDescription>
+                </DialogHeader>
+                <GestureRecorder 
+                  onGestureRecorded={handleAddGesture} 
+                  onCancel={() => setIsRecording(false)}
+                  gestureName="Custom Gesture" 
+                />
+              </DialogContent>
+            </Dialog>
+
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button className="bg-app-purple hover:bg-app-purple/90">
+                  Record New Sequence
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Record New Sequence</DialogTitle>
+                  <DialogDescription>
+                    Create a sequence of interactions that will be saved to your library
+                  </DialogDescription>
+                </DialogHeader>
+                <SequenceRecorder 
+                  onSequenceRecorded={handleAddSequence} 
+                  onCancel={() => {}}
+                  sequenceName="Custom Sequence" 
+                />
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         <GestureList 
