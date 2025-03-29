@@ -20,7 +20,9 @@ import {
   MapPin,
   AppWindow,
   PlayCircle,
-  Lock
+  Lock,
+  EyeOff,
+  UserX
 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import GestureRecorder, { GestureData } from '../gesture/GestureRecorder';
@@ -75,7 +77,12 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
     { id: 'messenger', name: 'Messenger' },
     { id: 'telegram', name: 'Telegram' },
     { id: 'signal', name: 'Signal' },
-    { id: 'sms', name: 'SMS' }
+    { id: 'sms', name: 'SMS' },
+    { id: 'facebook', name: 'Facebook' },
+    { id: 'instagram', name: 'Instagram' },
+    { id: 'tiktok', name: 'TikTok' },
+    { id: 'twitter', name: 'Twitter' },
+    { id: 'linkedin', name: 'LinkedIn' }
   ];
 
   const [securityFeatures, setSecurityFeatures] = useState<SecurityFeature[]>([
@@ -129,6 +136,24 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
       config: {
         sequence: undefined
       }
+    },
+    {
+      id: 'hide-apps',
+      name: 'Hide Apps',
+      description: 'Quickly hide selected apps from your home screen',
+      icon: <EyeOff className="h-6 w-6 text-app-purple" />,
+      config: {
+        apps: []
+      }
+    },
+    {
+      id: 'hide-contacts',
+      name: 'Hide Contacts',
+      description: 'Temporarily hide specific contacts from your contacts list',
+      icon: <UserX className="h-6 w-6 text-app-purple" />,
+      config: {
+        contacts: []
+      }
     }
   ]);
 
@@ -149,6 +174,14 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
     } else if (feature.id === 'start-app') {
       const startAppFeature = securityFeatures.find(f => f.id === 'start-app');
       setSelectedApps(startAppFeature?.config?.apps || []);
+      setIsConfigOpen(true);
+    } else if (feature.id === 'hide-apps') {
+      const hideAppsFeature = securityFeatures.find(f => f.id === 'hide-apps');
+      setSelectedApps(hideAppsFeature?.config?.apps || []);
+      setIsConfigOpen(true);
+    } else if (feature.id === 'hide-contacts') {
+      const hideContactsFeature = securityFeatures.find(f => f.id === 'hide-contacts');
+      setSelectedContacts(hideContactsFeature?.config?.contacts || []);
       setIsConfigOpen(true);
     } else if (feature.id === 'sequence-automation') {
       setIsSequenceDialogOpen(true);
@@ -230,45 +263,21 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
     }
   };
 
-  const handleSequenceRecorded = (sequence: SequenceData) => {
-    if (selectedFeature && selectedFeature.id === 'sequence-automation') {
-      const updatedFeatures = securityFeatures.map(feature => {
-        if (feature.id === 'sequence-automation') {
-          return {
-            ...feature,
-            config: {
-              ...feature.config,
-              sequence
-            }
-          };
-        }
-        return feature;
-      });
-      
-      setSecurityFeatures(updatedFeatures);
-      
-      setIsSequenceDialogOpen(false);
-      setIsDialogOpen(true);
-      
-      toast({
-        title: "Sequence created",
-        description: `"${sequence.name}" with ${sequence.points.length} actions${sequence.timerEnabled ? ' and timer' : ''}`,
-      });
-      
-      onAddSequence(sequence);
+  const handleConfigureHideApps = () => {
+    const hideAppsFeature = securityFeatures.find(f => f.id === 'hide-apps');
+    if (hideAppsFeature) {
+      setSelectedFeature(hideAppsFeature);
+      setSelectedApps(hideAppsFeature.config?.apps || []);
+      setIsConfigOpen(true);
     }
   };
 
-  const handleCancelSequence = () => {
-    setIsSequenceDialogOpen(false);
-    setSelectedFeature(null);
-  };
-
-  const handleConfigureSequence = () => {
-    const sequenceFeature = securityFeatures.find(f => f.id === 'sequence-automation');
-    if (sequenceFeature) {
-      setSelectedFeature(sequenceFeature);
-      setIsSequenceDialogOpen(true);
+  const handleConfigureHideContacts = () => {
+    const hideContactsFeature = securityFeatures.find(f => f.id === 'hide-contacts');
+    if (hideContactsFeature) {
+      setSelectedFeature(hideContactsFeature);
+      setSelectedContacts(hideContactsFeature.config?.contacts || []);
+      setIsConfigOpen(true);
     }
   };
 
@@ -344,6 +353,50 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
         title: "Start an App configured",
         description: `Will launch ${selectedApps.length} app(s) with a gesture`,
       });
+    } else if (selectedFeature.id === 'hide-apps') {
+      const updatedFeatures = securityFeatures.map(feature => {
+        if (feature.id === 'hide-apps') {
+          return {
+            ...feature,
+            config: {
+              apps: selectedApps
+            }
+          };
+        }
+        return feature;
+      });
+      
+      setSecurityFeatures(updatedFeatures);
+      
+      setIsConfigOpen(false);
+      setIsDialogOpen(true);
+      
+      toast({
+        title: "Hide Apps configured",
+        description: `Will hide ${selectedApps.length} app(s) with a gesture`,
+      });
+    } else if (selectedFeature.id === 'hide-contacts') {
+      const updatedFeatures = securityFeatures.map(feature => {
+        if (feature.id === 'hide-contacts') {
+          return {
+            ...feature,
+            config: {
+              contacts: selectedContacts
+            }
+          };
+        }
+        return feature;
+      });
+      
+      setSecurityFeatures(updatedFeatures);
+      
+      setIsConfigOpen(false);
+      setIsDialogOpen(true);
+      
+      toast({
+        title: "Hide Contacts configured",
+        description: `Will hide ${selectedContacts.length} contact(s) with a gesture`,
+      });
     }
   };
 
@@ -352,7 +405,7 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
       return (
         <Button 
           variant="outline" 
-          onClick={handleConfigureGhostDelete}
+          onClick={() => handleConfigureGhostDelete()}
           className="w-full bg-muted/20 hover:bg-muted/30"
         >
           <Settings className="mr-2 h-4 w-4" />
@@ -363,7 +416,7 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
       return (
         <Button 
           variant="outline" 
-          onClick={handleConfigureEmergencySignal}
+          onClick={() => handleConfigureEmergencySignal()}
           className="w-full bg-muted/20 hover:bg-muted/30"
         >
           <Settings className="mr-2 h-4 w-4" />
@@ -374,7 +427,7 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
       return (
         <Button 
           variant="outline" 
-          onClick={handleConfigureStartApp}
+          onClick={() => handleConfigureStartApp()}
           className="w-full bg-muted/20 hover:bg-muted/30"
         >
           <Settings className="mr-2 h-4 w-4" />
@@ -385,7 +438,7 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
       return (
         <Button 
           variant="outline" 
-          onClick={handleConfigureSequence}
+          onClick={() => handleConfigureSequence()}
           className="w-full bg-muted/20 hover:bg-muted/30"
         >
           <Settings className="mr-2 h-4 w-4" />
@@ -401,6 +454,28 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
         >
           <Settings className="mr-2 h-4 w-4" />
           No configuration needed
+        </Button>
+      );
+    } else if (feature.id === 'hide-apps') {
+      return (
+        <Button 
+          variant="outline" 
+          onClick={() => handleConfigureHideApps()}
+          className="w-full bg-muted/20 hover:bg-muted/30"
+        >
+          <Settings className="mr-2 h-4 w-4" />
+          Select Apps to Hide
+        </Button>
+      );
+    } else if (feature.id === 'hide-contacts') {
+      return (
+        <Button 
+          variant="outline" 
+          onClick={() => handleConfigureHideContacts()}
+          className="w-full bg-muted/20 hover:bg-muted/30"
+        >
+          <Settings className="mr-2 h-4 w-4" />
+          Select Contacts to Hide
         </Button>
       );
     }
@@ -562,6 +637,70 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
           </div>
         </div>
       );
+    } else if (selectedFeature.id === 'hide-apps') {
+      return (
+        <div className="space-y-4 py-2">
+          <div>
+            <h3 className="mb-2 text-sm font-medium">Select Apps to Hide</h3>
+            <div className="grid grid-cols-2 gap-2">
+              {availableApps.map(app => (
+                <div key={app.id} className="flex items-center space-x-2">
+                  <Checkbox 
+                    id={`app-${app.id}`} 
+                    checked={selectedApps.includes(app.id)}
+                    onCheckedChange={() => handleToggleApp(app.id)}
+                  />
+                  <Label 
+                    htmlFor={`app-${app.id}`}
+                    className="text-sm font-medium leading-none cursor-pointer"
+                  >
+                    {app.name}
+                  </Label>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    } else if (selectedFeature.id === 'hide-contacts') {
+      return (
+        <div className="space-y-4 py-2">
+          <h3 className="mb-2 text-sm font-medium">Add Contacts to Hide</h3>
+          <div className="flex mb-2">
+            <Input
+              value={newContactName}
+              onChange={(e) => setNewContactName(e.target.value)}
+              placeholder="Contact name"
+              className="mr-2"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddContact();
+                }
+              }}
+            />
+            <Button type="button" onClick={handleAddContact} size="sm">Add</Button>
+          </div>
+          
+          {selectedContacts.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {selectedContacts.map(contact => (
+                <div key={contact} className="flex items-center bg-muted px-2 py-1 rounded text-sm">
+                  {contact}
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-auto p-1 ml-1"
+                    onClick={() => handleRemoveContact(contact)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
     }
     
     return null;
@@ -611,6 +750,20 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
                         </p>
                       </div>
                     )}
+                    {feature.id === 'hide-apps' && feature.config && (
+                      <div className="mt-2">
+                        <p className="text-xs text-muted-foreground">
+                          {feature.config.apps?.length || 0} apps selected to hide
+                        </p>
+                      </div>
+                    )}
+                    {feature.id === 'hide-contacts' && feature.config && (
+                      <div className="mt-2">
+                        <p className="text-xs text-muted-foreground">
+                          {feature.config.contacts?.length || 0} contacts selected to hide
+                        </p>
+                      </div>
+                    )}
                     {feature.id === 'sequence-automation' && feature.config && feature.config.sequence && (
                       <div className="mt-2">
                         <p className="text-xs text-muted-foreground">
@@ -657,6 +810,8 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
                selectedFeature?.id === 'emergency-signal' ? 'Configure Emergency Signal' : 
                selectedFeature?.id === 'start-app' ? 'Configure Start an App' :
                selectedFeature?.id === 'lock-unlock' ? 'Configure Lock/Unlock Phone' :
+               selectedFeature?.id === 'hide-apps' ? 'Configure Hide Apps' :
+               selectedFeature?.id === 'hide-contacts' ? 'Configure Hide Contacts' :
                'Configure Feature'}
             </DialogTitle>
             <DialogDescription>
@@ -668,6 +823,10 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
                 'Select which apps you want to start with a gesture' :
                selectedFeature?.id === 'lock-unlock' ?
                 'No configuration needed' :
+               selectedFeature?.id === 'hide-apps' ?
+                'Select which apps you want to hide with a gesture' :
+               selectedFeature?.id === 'hide-contacts' ?
+                'Select which contacts you want to hide with a gesture' :
                 'Configure this security feature'}
             </DialogDescription>
           </DialogHeader>
