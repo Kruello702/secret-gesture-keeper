@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AuthForm from '@/components/auth/AuthForm';
 import { Button } from "@/components/ui/button";
-import { Shield, Settings, LogOut, PlayCircle, Lock, Smartphone, Eye, EyeOff, Fingerprint, Sparkles, ChevronDown } from "lucide-react";
+import { Shield, Settings, LogOut, PlayCircle, Lock, Smartphone, Eye, EyeOff, Fingerprint, Sparkles, ChevronDown, Minimize } from "lucide-react";
 import GestureRecorder, { GestureData } from '@/components/gesture/GestureRecorder';
 import GestureList from '@/components/gesture/GestureList';
 import SecurityFeatures from '@/components/security/SecurityFeatures';
@@ -13,6 +13,7 @@ import { SequenceData } from '@/components/sequence/SequenceRecorder';
 import SequenceList from '@/components/sequence/SequenceList';
 import { Card, CardContent } from "@/components/ui/card";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { useFloatingSequence } from '@/components/sequence/useFloatingSequence';
 
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -23,12 +24,20 @@ const Index = () => {
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [gestureToDelete, setGestureToDelete] = useState<string | null>(null);
   const [sequenceToDelete, setSequenceToDelete] = useState<string | null>(null);
-  const [activeSequence, setActiveSequence] = useState<SequenceData | null>(null);
   const [isPhoneLocked, setIsPhoneLocked] = useState(false);
   const [hiddenApps, setHiddenApps] = useState<string[]>([]);
   const [hiddenContacts, setHiddenContacts] = useState<string[]>([]);
   const [showMoreFeatures, setShowMoreFeatures] = useState(false);
+  const [appMinimized, setAppMinimized] = useState(false);
   const { toast } = useToast();
+  
+  const {
+    activeSequence,
+    isMinimized,
+    startSequence,
+    stopSequence,
+    toggleMinimize
+  } = useFloatingSequence();
 
   useEffect(() => {
     const hasPin = localStorage.getItem('userPin') !== null;
@@ -225,16 +234,12 @@ const Index = () => {
   };
 
   const activateSequenceDemo = (sequenceId?: string) => {
-    let targetSequence: SequenceData;
+    let targetSequence: SequenceData | undefined;
     
     if (sequenceId && sequences.length > 0) {
-      const foundSequence = sequences.find(s => s.id === sequenceId);
-      if (foundSequence) {
-        setActiveSequence(foundSequence);
-        toast({
-          title: "Sequence Activated",
-          description: `${foundSequence.name} has been activated.`,
-        });
+      targetSequence = sequences.find(s => s.id === sequenceId);
+      if (targetSequence) {
+        startSequence(targetSequence);
         return;
       }
     }
@@ -264,16 +269,19 @@ const Index = () => {
       createdAt: new Date().toISOString()
     };
     
-    setActiveSequence(demoSequence);
-    
-    toast({
-      title: "Sequence Activated",
-      description: "Demo sequence has been activated.",
-    });
+    startSequence(demoSequence);
   };
 
   const handleCloseSequence = () => {
-    setActiveSequence(null);
+    stopSequence();
+  };
+
+  const handleMinimizeApp = () => {
+    setAppMinimized(true);
+    toast({
+      title: "App Minimized",
+      description: "The app is now running in the background.",
+    });
   };
 
   const handleGhostDeleteDemo = () => {
@@ -394,6 +402,17 @@ const Index = () => {
     );
   }
 
+  if (isMinimized && activeSequence) {
+    return (
+      <FloatingBubble 
+        sequence={activeSequence} 
+        onClose={handleCloseSequence}
+        isMinimized={true}
+        onToggleMinimize={toggleMinimize}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-app-dark pb-20">
       <header className="sticky top-0 z-10 bg-card/80 backdrop-blur-md border-b border-muted">
@@ -412,6 +431,17 @@ const Index = () => {
               <PlayCircle className="h-3 w-3" />
               Demo Sequence
             </Button>
+            {activeSequence && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs flex items-center gap-1"
+                onClick={toggleMinimize}
+              >
+                <Minimize className="h-3 w-3" />
+                Minimize
+              </Button>
+            )}
             <Button 
               variant="outline" 
               size="sm" 
@@ -501,10 +531,12 @@ const Index = () => {
         </AlertDialogContent>
       </AlertDialog>
       
-      {activeSequence && (
+      {activeSequence && !isMinimized && (
         <FloatingBubble 
           sequence={activeSequence} 
-          onClose={handleCloseSequence} 
+          onClose={handleCloseSequence}
+          isMinimized={false}
+          onToggleMinimize={toggleMinimize}
         />
       )}
       

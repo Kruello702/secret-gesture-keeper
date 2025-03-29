@@ -6,16 +6,25 @@ import {
   MousePointerClick,
   X,
   Play,
-  Pause
+  Pause,
+  Maximize,
+  Minimize
 } from 'lucide-react';
 import { SequenceData, SequencePoint } from './SequenceRecorder';
 
 interface FloatingBubbleProps {
   sequence: SequenceData;
   onClose: () => void;
+  isMinimized?: boolean;
+  onToggleMinimize?: () => void;
 }
 
-const FloatingBubble: React.FC<FloatingBubbleProps> = ({ sequence, onClose }) => {
+const FloatingBubble: React.FC<FloatingBubbleProps> = ({ 
+  sequence, 
+  onClose, 
+  isMinimized = false,
+  onToggleMinimize
+}) => {
   const [position, setPosition] = useState({ x: window.innerWidth - 80, y: 100 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -135,18 +144,27 @@ const FloatingBubble: React.FC<FloatingBubbleProps> = ({ sequence, onClose }) =>
       startSequence();
     }
   };
+
+  const handleToggleMinimize = () => {
+    if (onToggleMinimize) {
+      onToggleMinimize();
+    }
+  };
+  
+  // Determine bubble size based on minimized state
+  const bubbleSize = isMinimized && !isExpanded ? 60 : (isExpanded ? 180 : 60);
   
   return (
     <>
       {/* Main bubble */}
       <div
         ref={bubbleRef}
-        className="fixed z-50 flex items-center justify-center shadow-lg rounded-full cursor-move select-none"
+        className={`fixed z-50 flex items-center justify-center shadow-lg rounded-full cursor-move select-none ${isMinimized ? 'shadow-lg' : ''}`}
         style={{
           left: `${position.x}px`,
           top: `${position.y}px`,
-          width: isExpanded ? '180px' : '60px',
-          height: isExpanded ? '180px' : '60px',
+          width: `${bubbleSize}px`,
+          height: `${bubbleSize}px`,
           backgroundColor: '#9747FF',
           transition: 'width 0.2s, height 0.2s',
           opacity: 0.9
@@ -172,6 +190,15 @@ const FloatingBubble: React.FC<FloatingBubbleProps> = ({ sequence, onClose }) =>
               >
                 <X className="h-4 w-4" />
               </button>
+              {onToggleMinimize && (
+                <button 
+                  className="w-7 h-7 bg-black/20 rounded-full flex items-center justify-center text-white hover:bg-black/30"
+                  onClick={handleToggleMinimize}
+                  title={isMinimized ? "Maximize" : "Minimize"}
+                >
+                  {isMinimized ? <Maximize className="h-4 w-4" /> : <Minimize className="h-4 w-4" />}
+                </button>
+              )}
               <button 
                 className="w-7 h-7 bg-black/20 rounded-full flex items-center justify-center text-white hover:bg-black/30"
                 onClick={onClose}
