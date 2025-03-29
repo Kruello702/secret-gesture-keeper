@@ -400,6 +400,48 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture, onAdd
     }
   };
 
+  const handleConfigureSequence = () => {
+    const sequenceFeature = securityFeatures.find(f => f.id === 'sequence-automation');
+    if (sequenceFeature) {
+      setSelectedFeature(sequenceFeature);
+      setIsSequenceDialogOpen(true);
+    }
+  };
+
+  const handleSequenceRecorded = (sequence: SequenceData) => {
+    if (selectedFeature && selectedFeature.id === 'sequence-automation') {
+      const updatedFeatures = securityFeatures.map(feature => {
+        if (feature.id === 'sequence-automation') {
+          return {
+            ...feature,
+            config: {
+              ...feature.config,
+              sequence: sequence
+            }
+          };
+        }
+        return feature;
+      });
+      
+      setSecurityFeatures(updatedFeatures);
+      
+      onAddSequence(sequence);
+      
+      toast({
+        title: "Sequence created",
+        description: `${sequence.name} has been configured for the security feature`,
+      });
+      
+      setIsSequenceDialogOpen(false);
+      setSelectedFeature(null);
+    }
+  };
+
+  const handleCancelSequence = () => {
+    setIsSequenceDialogOpen(false);
+    setSelectedFeature(null);
+  };
+
   const getConfigButton = (feature: SecurityFeature) => {
     if (feature.id === 'ghost-delete') {
       return (

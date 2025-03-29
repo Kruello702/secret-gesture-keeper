@@ -94,7 +94,6 @@ const Index = () => {
       description: isPhoneLocked 
         ? "Your device has been unlocked with your gesture" 
         : "Your device has been locked with your gesture",
-      icon: <Lock className="h-5 w-5" />
     });
   };
 
