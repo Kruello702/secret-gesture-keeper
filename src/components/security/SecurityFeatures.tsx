@@ -38,7 +38,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import SequenceRecorder, { SequenceData } from '../sequence/SequenceRecorder';
+import SequenceRecorder, { SequenceData } from '../sequence/SequenceRecorder";
 
 export interface SecurityFeature {
   id: string;
