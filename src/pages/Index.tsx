@@ -11,6 +11,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import FloatingBubble from '@/components/sequence/FloatingBubble';
 import { SequenceData } from '@/components/sequence/SequenceRecorder';
 import SequenceRecorder from '@/components/sequence/SequenceRecorder';
+import MinimizedSequenceRecorder from '@/components/sequence/MinimizedSequenceRecorder';
 import SequenceList from '@/components/sequence/SequenceList';
 import { Card, CardContent } from "@/components/ui/card";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
@@ -30,6 +31,7 @@ const Index = () => {
   const [hiddenContacts, setHiddenContacts] = useState<string[]>([]);
   const [showMoreFeatures, setShowMoreFeatures] = useState(false);
   const [appMinimized, setAppMinimized] = useState(false);
+  const [isMinimizedRecording, setIsMinimizedRecording] = useState(false);
   const { toast } = useToast();
   
   const {
@@ -228,10 +230,19 @@ const Index = () => {
       newSequence.createdAt = new Date().toISOString();
     }
     setSequences(prev => [...prev, newSequence]);
+    setIsMinimizedRecording(false);
     toast({
       title: "Sequence created",
       description: "New sequence has been added successfully.",
     });
+  };
+  
+  const startMinimizedRecording = () => {
+    setIsMinimizedRecording(true);
+  };
+  
+  const cancelMinimizedRecording = () => {
+    setIsMinimizedRecording(false);
   };
 
   const activateSequenceDemo = (sequenceId?: string) => {
@@ -403,6 +414,19 @@ const Index = () => {
     );
   }
 
+  if (isMinimizedRecording) {
+    return (
+      <>
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-10" />
+        <MinimizedSequenceRecorder 
+          onSequenceRecorded={handleAddSequence}
+          onCancel={cancelMinimizedRecording}
+          sequenceName="New Sequence"
+        />
+      </>
+    );
+  }
+
   if (isMinimized && activeSequence) {
     return (
       <FloatingBubble 
@@ -500,26 +524,12 @@ const Index = () => {
               </DialogContent>
             </Dialog>
 
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button className="bg-app-purple hover:bg-app-purple/90">
-                  Record New Sequence
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Record New Sequence</DialogTitle>
-                  <DialogDescription>
-                    Create a sequence of interactions that will be saved to your library
-                  </DialogDescription>
-                </DialogHeader>
-                <SequenceRecorder 
-                  onSequenceRecorded={handleAddSequence} 
-                  onCancel={() => {}}
-                  sequenceName="Custom Sequence" 
-                />
-              </DialogContent>
-            </Dialog>
+            <Button 
+              className="bg-app-purple hover:bg-app-purple/90"
+              onClick={startMinimizedRecording}
+            >
+              Record New Sequence
+            </Button>
           </div>
         </div>
 

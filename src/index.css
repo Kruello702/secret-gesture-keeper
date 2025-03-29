@@ -1,48 +1,80 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 257 25% 14%;
-    --foreground: 240 5% 96%;
+    --app-purple: #9747FF;
+    --app-dark: #09090b;
+    --app-light: #f9fafb;
 
-    --card: 257 25% 18%;
-    --card-foreground: 240 5% 96%;
-
-    --popover: 257 25% 14%;
-    --popover-foreground: 240 5% 96%;
-
-    --primary: 263 90% 66%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 214 94% 94%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
     --muted: 240 3.7% 15.9%;
     --muted-foreground: 240 5% 64.9%;
-
-    --accent: 214 94% 94%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
-    --ring: 240 5.9% 10%;
+    --ring: 240 4.9% 83.9%;
+  }
 
-    --radius: 0.5rem;
-
-    --sidebar-background: 252 30% 10%;
-    --sidebar-foreground: 240 5% 96%;
-    --sidebar-primary: 263 90% 66%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 5% 96%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 263 90% 66%;
+  .bg-app-purple {
+    background-color: var(--app-purple);
+  }
+  
+  .bg-app-dark {
+    background-color: var(--app-dark);
+  }
+  
+  .text-app-purple {
+    color: var(--app-purple);
+  }
+  
+  .border-app-purple {
+    border-color: var(--app-purple);
+  }
+  
+  .animate-pulse-subtle {
+    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  .animate-spin-slow {
+    animation: spin 8s linear infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+  
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  /* Support for the new sequence recorder component */
+  
+  .cursor-crosshair {
+    cursor: crosshair;
   }
 }
 
@@ -50,119 +82,16 @@
   * {
     @apply border-border;
   }
-
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
-@layer components {
-  .gesture-dot {
-    @apply w-3 h-3 rounded-full bg-app-purple opacity-75;
-  }
-  
-  .gesture-line {
-    @apply h-0.5 bg-app-purple opacity-60;
-  }
-  
-  .security-feature-card {
-    @apply relative p-6 rounded-lg border border-muted bg-card transition-all 
-           hover:border-app-purple/50 hover:shadow-md hover:shadow-app-purple/20;
-  }
-
-  .recording-indicator {
-    @apply relative flex items-center justify-center;
-  }
-  
-  .recording-indicator::before {
-    content: '';
-    @apply absolute w-full h-full rounded-full bg-app-purple/30 animate-recording-pulse;
-  }
-  
-  /* New styles for sequence recorder */
-  .sequence-point {
-    @apply absolute flex items-center justify-center w-6 h-6 rounded-full bg-app-purple/80 text-white text-xs font-bold transform -translate-x-1/2 -translate-y-1/2;
-  }
-  
-  .sequence-target {
-    @apply absolute w-4 h-4 border-2 border-app-purple rounded-full transform -translate-x-1/2 -translate-y-1/2;
-  }
-  
-  .floating-bubble {
-    @apply fixed z-50 flex items-center justify-center shadow-lg rounded-full cursor-move select-none;
-  }
-  
-  .bubble-action-button {
-    @apply w-7 h-7 bg-black/20 rounded-full flex items-center justify-center text-white hover:bg-black/30;
-  }
-}
-
-@keyframes recording-pulse {
-  0% {
-    transform: scale(1);
-    opacity: 0.3;
-  }
-  50% {
-    transform: scale(1.1);
-    opacity: 0.15;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 0.3;
-  }
-}
-
-@keyframes float-pulse {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-@keyframes spin-slow {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-@layer utilities {
-  .animate-recording-pulse {
-    animation: recording-pulse 1.5s infinite;
-  }
-  
-  .animate-float-pulse {
-    animation: float-pulse 2s infinite;
-  }
-  
-  .animate-spin-slow {
-    animation: spin-slow 15s linear infinite;
-  }
-  
-  .animate-fade-in {
-    animation: fadeIn 0.8s ease-out forwards;
-  }
-  
-  .animate-bounce {
-    animation: bounce 2s infinite;
-  }
-  
-  .animate-pulse-subtle {
-    animation: pulse 3s infinite;
-  }
-}
-
-@keyframes fadeIn {
+@keyframes fade-in {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
@@ -170,26 +99,22 @@
   }
 }
 
-@keyframes bounce {
-  0%, 20%, 50%, 80%, 100% {
-    transform: translateY(0);
-  }
-  40% {
-    transform: translateY(-10px);
-  }
-  60% {
-    transform: translateY(-5px);
-  }
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out;
 }
 
-@keyframes pulse {
-  0% {
-    opacity: 0.6;
-  }
-  50% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0.6;
-  }
+.recording-indicator {
+  position: relative;
+}
+
+.recording-indicator::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 8px;
+  height: 8px;
+  background-color: #9747FF;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
 }
