@@ -16,7 +16,8 @@ import {
   Monitor, 
   Send, 
   Plus,
-  X 
+  X,
+  Settings
 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import GestureRecorder, { GestureData } from '../gesture/GestureRecorder';
@@ -162,6 +163,16 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture }) => 
     }
   };
 
+  const handleConfigureGhostDelete = () => {
+    const ghostDeleteFeature = securityFeatures.find(f => f.id === 'ghost-delete');
+    if (ghostDeleteFeature) {
+      setSelectedFeature(ghostDeleteFeature);
+      setSelectedApps(ghostDeleteFeature.config?.apps || []);
+      setSelectedContacts(ghostDeleteFeature.config?.contacts || []);
+      setIsConfigOpen(true);
+    }
+  };
+
   const handleSaveConfig = () => {
     if (selectedFeature && selectedFeature.id === 'ghost-delete') {
       // Update the feature in state with the new config
@@ -213,23 +224,37 @@ const SecurityFeatures: React.FC<SecurityFeaturesProps> = ({ onAddGesture }) => 
                     <p className="text-sm text-muted-foreground">
                       {feature.description}
                     </p>
-                    {feature.id === 'ghost-delete' && feature.config?.contacts && feature.config.contacts.length > 0 && (
+                    {feature.id === 'ghost-delete' && feature.config && (
                       <div className="mt-2">
                         <p className="text-xs text-muted-foreground">
-                          {feature.config.contacts.length} contacts, {feature.config.apps?.length || 0} apps configured
+                          {feature.config.contacts?.length || 0} contacts, {feature.config.apps?.length || 0} apps configured
                         </p>
                       </div>
                     )}
                   </div>
                 </div>
-                <Button 
-                  variant="outline" 
-                  onClick={() => handleFeatureSelect(feature)}
-                  className="w-full border-dashed border-muted-foreground/50 hover:border-app-purple/50 hover:bg-muted/50"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Assign Gesture
-                </Button>
+                
+                <div className="space-y-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => handleFeatureSelect(feature)}
+                    className="w-full border-dashed border-muted-foreground/50 hover:border-app-purple/50 hover:bg-muted/50"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Assign Gesture
+                  </Button>
+                  
+                  {feature.id === 'ghost-delete' && (
+                    <Button 
+                      variant="outline" 
+                      onClick={handleConfigureGhostDelete}
+                      className="w-full bg-muted/20 hover:bg-muted/30"
+                    >
+                      <Settings className="mr-2 h-4 w-4" />
+                      Add App and Contacts
+                    </Button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
