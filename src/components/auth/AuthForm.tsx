@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, Lock } from "lucide-react";
+import { Shield, Lock, Mail } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 interface AuthFormProps {
@@ -13,6 +13,7 @@ interface AuthFormProps {
 const AuthForm: React.FC<AuthFormProps> = ({ onAuthSuccess }) => {
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
+  const [email, setEmail] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -25,24 +26,35 @@ const AuthForm: React.FC<AuthFormProps> = ({ onAuthSuccess }) => {
     setTimeout(() => {
       if (isRegistering) {
         // Registration
-        if (pin.length >= 4 && pin === confirmPin) {
+        if (pin.length >= 4 && pin === confirmPin && email && validateEmail(email)) {
           localStorage.setItem('userPin', pin);
+          localStorage.setItem('userEmail', email);
           toast({
             title: "Registration successful",
-            description: "Your security PIN has been set.",
+            description: "Your security PIN and email have been set.",
           });
           onAuthSuccess();
         } else {
+          let errorMessage = "Registration failed: ";
+          if (pin.length < 4 || pin !== confirmPin) {
+            errorMessage += "PINs must match and be at least 4 digits. ";
+          }
+          if (!email || !validateEmail(email)) {
+            errorMessage += "A valid email address is required.";
+          }
+          
           toast({
             variant: "destructive",
             title: "Registration failed",
-            description: "PINs must match and be at least 4 digits.",
+            description: errorMessage.trim(),
           });
         }
       } else {
         // Login
         const storedPin = localStorage.getItem('userPin');
-        if (storedPin && pin === storedPin) {
+        const storedEmail = localStorage.getItem('userEmail');
+        
+        if (storedPin && pin === storedPin && (!isRegistering || email === storedEmail)) {
           toast({
             title: "Authentication successful",
             description: "Welcome back to Secret Gesture Keeper.",
@@ -52,12 +64,16 @@ const AuthForm: React.FC<AuthFormProps> = ({ onAuthSuccess }) => {
           toast({
             variant: "destructive",
             title: "Authentication failed",
-            description: "Incorrect PIN.",
+            description: "Incorrect PIN or email.",
           });
         }
       }
       setIsLoading(false);
     }, 1000);
+  };
+
+  const validateEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -78,13 +94,26 @@ const AuthForm: React.FC<AuthFormProps> = ({ onAuthSuccess }) => {
         </CardTitle>
         <CardDescription className="text-center">
           {isRegistering 
-            ? "Set a PIN to secure your gestures" 
+            ? "Set a PIN and email to secure your gestures" 
             : "Authenticate to access your secure gestures"}
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent>
           <div className="grid gap-4">
+            <div className="grid gap-2">
+              <Input
+                id="email"
+                type="email"
+                placeholder="Email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="bg-muted/50"
+                required={isRegistering}
+                autoComplete="email"
+              />
+            </div>
+            
             <div className="grid gap-2">
               <Input
                 id="pin"
